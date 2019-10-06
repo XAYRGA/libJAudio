@@ -40,4 +40,5 @@ The Sunshine Hut Discord
 
 The Noclip.Website Discord
 
+If I forgot anybody, sorry about that. This has been quite the adventure, and regardless of whether or not you're listed here, you're still appreciated.
 
