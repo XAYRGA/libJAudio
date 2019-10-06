@@ -123,6 +123,20 @@ namespace libJAudio.Types
             vectorPosition = 0;
             state = JOScillatorState.Playing;
         }
+
+        public float calc()
+        {
+            var vectorDuration = (currentVector.time - lastVector.time);
+            var delta = lastVector.value - currentVector.value;
+            switch (currentVector.mode)
+            {
+                case JOscillatorVectorMode.Linear:
+                    {
+                        return lastVector.value + delta * (vectorDuration / (float)duration);
+                    }
+            }
+            return 0;
+        }
     }
 
     public class JOscillatorVector
