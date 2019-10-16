@@ -8,13 +8,31 @@ namespace libJAudio.Types
 {
     public class JOscillator
     {
-        public static JOscillatorVector zeroVector = new JOscillatorVector { mode = JOscillatorVectorMode.Linear, time = 0, value = 0 };
         public JOscillatorTarget target;
         public float rate;
         public JOscillatorVector[] ASVector;
         public JOscillatorVector[] DRVector;
         public float Width;
         public float Vertex;
+
+        private JOscillatorInstance createInstance()
+        {
+            return new JOscillatorInstance(rate, Width, Vertex, ref ASVector, ref DRVector, target);
+        }
+
+    }
+
+
+    public class JOscillatorInstance
+    {
+        public static JOscillatorVector zeroVector = new JOscillatorVector { mode = JOscillatorVectorMode.Linear, time = 0, value = 0 };
+
+        private JOscillatorTarget target;
+        private float rate;
+        private JOscillatorVector[] ASVector;
+        private JOscillatorVector[] DRVector;
+        private float Width;
+        private float Vertex;
 
         private JOScillatorState state;
         private JOscillatorVector[] currentVectorSet;
@@ -27,9 +45,21 @@ namespace libJAudio.Types
 
         private short vectorPosition;
 
+        public JOscillatorInstance(float advanceRate, float width, float vert, ref JOscillatorVector[] attackSustain, ref JOscillatorVector[] release, JOscillatorTarget targ)
+        {
+            rate = advanceRate;
+            Width = width;
+            Vertex = vert;
+            ASVector = attackSustain;
+            DRVector = release;
+            target = targ;
+
+        }
+
+
         public void advance()
         {
-            if (state == JOScillatorState.Playing )
+            if (state == JOScillatorState.Playing)
             {
                 position += rate; // advance at the rate of the oscillator
                 duration += rate; // same with the duration
@@ -89,17 +119,17 @@ namespace libJAudio.Types
                     if (currentVector.time < position) // error if nintendo did a dumb -- and the sorting algorithm didn't catch it.
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.Write("FUCK: ");
+                        Console.Write("BUG: ");
                         Console.ForegroundColor = ConsoleColor.Gray;
                         Console.WriteLine("New oscillator vector position is less than previous vector.");
                     }
                 }
-            } 
+            }
         }
 
         public void attack()
         {
-            if (ASVector==null) { state = 0; return; }
+            if (ASVector == null) { state = 0; return; }
             lastVector = zeroVector;
             currentVectorSet = ASVector;
             currentVector = currentVectorSet[0];
@@ -115,7 +145,7 @@ namespace libJAudio.Types
             if (lastVector == null)
             {
                 lastVector = zeroVector; // Definitely needed, release oscillators are ... ugh >.>
-            }            
+            }
             currentVectorSet = DRVector;
             currentVector = currentVectorSet[0];
             position = 0;
