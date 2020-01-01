@@ -97,6 +97,17 @@ namespace libJAudio.Sequence
                             jump(addr); // Jup to specified address
                             rI[1] = addr; // set ir1 to address jumped to
                         }
+                        return JAISeqEvent.CALL_CONDITIONAL;
+                    }
+                case (byte)JAISeqEvent.CALL:
+                    {
+                        var cond = Sequence.ReadByte();
+                        var addr = Sequence.ReadInt32();
+                        var cCheck = checkCondition(cond);
+                        rI[0] = addr; // Set address
+                                              
+                        AddrStack.Push(pc); // Push to address stack
+                        jump(addr); // Jup to specified address
                         return JAISeqEvent.CALL;
                     }
                 case (byte)JAISeqEvent.RETURN:
