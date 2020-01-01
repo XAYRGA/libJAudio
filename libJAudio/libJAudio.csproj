@@ -34,6 +34,8 @@
   <ItemGroup>
     <Reference Include="Be.IO, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Be.IO.1.0.0\lib\portable-net45+win+wpa81+wp80+MonoAndroid10+Xamarin.iOS10+MonoTouch10\Be.IO.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -48,6 +50,7 @@
     <Compile Include="Helpers.cs" />
     <Compile Include="JAIInit.cs" />
     <Compile Include="JASystem.cs" />
+    <Compile Include="JEnvelope.cs" />
     <Compile Include="JIBank.cs" />
     <Compile Include="JInstrument.cs" />
     <Compile Include="JOscillator.cs" />
@@ -59,6 +62,7 @@
     <Compile Include="Loaders\JASystemLoader.cs" />
     <Compile Include="Loaders\JA_AAFLoader.cs" />
     <Compile Include="Loaders\JA_BAALoader.cs" />
+    <Compile Include="Loaders\JA_BXLoader.cs" />
     <Compile Include="Loaders\JA_IBankLoader_V1.cs" />
     <Compile Include="Loaders\JA_IBankLoader_V2.cs" />
     <Compile Include="Loaders\JA_WSYSLoader_V1.cs" />

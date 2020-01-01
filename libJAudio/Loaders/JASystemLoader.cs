@@ -5,6 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using libJAudio.Types;
 
+// If i was wrong about BX and its isntrument assignments (it assigns them sequentially, but loads into 0 when needed) 
+// then define this.
+// #define BX_XAYR_WRONG  
+
 namespace libJAudio.Loaders
 {
     public static class JASystemLoader
@@ -26,6 +30,11 @@ namespace libJAudio.Loaders
             return newJA;
         }
 
+
+        public static void loadJBX(ref JASystem JAS, ref byte[] data)
+        {
+
+        }
 
         /* AAF is safe, we know it's always going to be a V1 instrument format. */
         public static void loadJV0(ref JASystem JAS, ref byte[] data)
@@ -84,6 +93,7 @@ namespace libJAudio.Loaders
                             var secondChunkID = read.ReadInt32();
 
                             JIBank ibnk;
+                            //THIS IS YOUR FAULT, FOUR SWORDS ADVENTURE.
                             if (secondChunkID == 0x42414E4B) // V1 type banks always have literal `BANK` after them. 
                             {
                                  var v1L = new JA_IBankLoader_V1(); // Make a loader

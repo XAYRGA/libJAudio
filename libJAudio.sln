@@ -5,6 +5,11 @@ VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libJAudio", "libJAudio\libJAudio.csproj", "{AD67EECC-10C7-4551-B949-D5D52FC95594}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libJAudioTest", "libJAudioTest\libJAudioTest.csproj", "{4D767F73-3C93-4CFD-97B5-D812CABC8CF1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AD67EECC-10C7-4551-B949-D5D52FC95594} = {AD67EECC-10C7-4551-B949-D5D52FC95594}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +20,10 @@ Global
 		{AD67EECC-10C7-4551-B949-D5D52FC95594}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD67EECC-10C7-4551-B949-D5D52FC95594}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD67EECC-10C7-4551-B949-D5D52FC95594}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D767F73-3C93-4CFD-97B5-D812CABC8CF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D767F73-3C93-4CFD-97B5-D812CABC8CF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D767F73-3C93-4CFD-97B5-D812CABC8CF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D767F73-3C93-4CFD-97B5-D812CABC8CF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

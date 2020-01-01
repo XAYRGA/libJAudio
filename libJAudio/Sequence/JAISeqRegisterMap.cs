@@ -14,7 +14,6 @@ namespace libJAudio.Sequence
         {
             InternalDict = new Dictionary<byte, short>(255);
         }
-
         public short this[byte index]
         {
             get

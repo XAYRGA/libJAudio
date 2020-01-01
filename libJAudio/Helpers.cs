@@ -35,8 +35,6 @@ namespace libJAudio
             {
                 fade = ((fade & 0x7F) << 7);
                 fade += reader.ReadByte();
-
-
             }
             return fade;
         }
@@ -52,11 +50,6 @@ namespace libJAudio
 
             return b;
         }
-
-
-
-
-
 
 
         /* I'll start by being honest.

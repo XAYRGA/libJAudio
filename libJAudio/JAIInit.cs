@@ -9,8 +9,9 @@ namespace libJAudio
 
     public enum JAIInitType
     {
-        AAF = 0,
-        BAA = 1,
+        BX = 0,
+        AAF = 1,
+        BAA = 2,
     }
 
     public enum JAIInitSectionType

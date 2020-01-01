@@ -167,7 +167,7 @@ namespace libJAudio.Loaders
 
             0x000F, 0x0000, 0x0000
         */
-        public JOscillatorVector[] readOscVector(BeBinaryReader binStream, int Base)
+        public JEnvelope readEnvelope(BeBinaryReader binStream, int Base)
         {
             var len = 0;
             // This function cheats a little bit :) 
@@ -188,13 +188,13 @@ namespace libJAudio.Loaders
                 }
             }
             binStream.BaseStream.Position = seekBase;  // After we have an idea how big the table is -- we want to seek back to the beginning of it.
-            JOscillatorVector[] OscVecs = new JOscillatorVector[len]; // And create an array the size of our length.
+            JEnvelopeVector[] OscVecs = new JEnvelopeVector[len]; // And create an array the size of our length.
 
             for (int i=0; i < len - 1;i++) // we read - 1 because we don't want to read the end value yet
             {              
-                var vector = new JOscillatorVector
+                var vector = new JEnvelopeVector
                 {
-                    mode = (JOscillatorVectorMode)binStream.ReadInt16(), // Read the values of each into their places
+                    mode = (JEnvelopeVectorMode)binStream.ReadInt16(), // Read the values of each into their places
                     time = binStream.ReadInt16(), // read time 
                     value = binStream.ReadInt16() // read value
                 };
@@ -210,7 +210,6 @@ namespace libJAudio.Loaders
                 {
                     var current = OscVecs[i]; // Grab current oscillator vector, notice the for loop starts at 1
                     var cmp = OscVecs[j]; // Grab the previous object
-
                     if (cmp.time > current.time) // if its time is greater than ours
                     {
                         OscVecs[j] = current; // shift us down
@@ -225,14 +224,15 @@ namespace libJAudio.Loaders
 
             var lastVector = OscVecs[OscVecs.Length - 2]; // -2 gets the last indexed object.
             // This is disgusting, i know.
-            OscVecs[OscVecs.Length - 1] = new JOscillatorVector
+            OscVecs[OscVecs.Length - 1] = new JEnvelopeVector
             {
-                mode = (JOscillatorVectorMode)binStream.ReadInt16(), // Read the values of each into their places
+                mode = (JEnvelopeVectorMode)binStream.ReadInt16(), // Read the values of each into their places
                 time = (short)(lastVector.time), // read time 
                 value = lastVector.value // read value
             };
-
-            return OscVecs; // finally, return. 
+            var ret = new JEnvelope();
+            ret.vectorList = OscVecs;
+            return ret; // finally, return. 
         }
 
 
@@ -260,12 +260,12 @@ namespace libJAudio.Loaders
             if (attackSustainTableOffset > 0) // first is AS table
             {
                 binStream.BaseStream.Position = attackSustainTableOffset + Base; // Seek to the vector table
-                Osc.ASVector = readOscVector(binStream, Base); // Load the table
+                Osc.envelopes[0] = readEnvelope(binStream, Base); // Load the table
             }
             if (releaseDecayTableOffset > 0) // Next is RD table
             {
                 binStream.BaseStream.Position = releaseDecayTableOffset + Base; // Seek to the vector and load it
-                Osc.DRVector = readOscVector(binStream, Base); // loadddd
+                Osc.envelopes[1] = readEnvelope(binStream, Base); // loadddd
             }
             Osc.target = (JOscillatorTarget)target;
             return Osc;
