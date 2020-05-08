@@ -66,23 +66,23 @@
     <Compile Include="Loaders\JA_IBankLoader_V1.cs" />
     <Compile Include="Loaders\JA_IBankLoader_V2.cs" />
     <Compile Include="Loaders\JA_WSYSLoader_V1.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sequence\Inter\JAISeqExecutionFrame.cs" />
+    <Compile Include="Sequence\Inter\JAISeqInterpreter.cs" />
+    <Compile Include="Sequence\Inter\JAISeq_Arithmetic.cs" />
+    <Compile Include="Sequence\Inter\JAISeq_Flow.cs" />
+    <Compile Include="Sequence\Inter\JAISeq_Param.cs" />
+    <Compile Include="Sequence\Inter\JAISeq_Perf.cs" />
     <Compile Include="Sequence\JAISeqEvent.cs" />
-    <Compile Include="Sequence\JAISeqExecutionFrame.cs" />
-    <Compile Include="Sequence\JAISeqRegisterMap.cs" />
-    <Compile Include="Sequence\JAISeqSubroutine.cs" />
-    <Compile Include="Sequence\JAISeq_Arithmetic.cs" />
-    <Compile Include="Sequence\JAISeq_Flow.cs" />
-    <Compile Include="Sequence\JAISeq_Param.cs" />
-    <Compile Include="Sequence\JAISeq_Perf.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Sequence\seqdoc.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Sequence\seqdoc.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Sequence\OO\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

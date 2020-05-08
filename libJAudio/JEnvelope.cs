@@ -17,15 +17,8 @@ namespace libJAudio
         public JEnvelopeVectorMode mode;
         public short time;
         public short value;
+        public JEnvelopeVector next;
     }
-    /*
-    public enum JEnvelopeState
-    {
-        Stopped = 0,
-        Playing = 1,
-        Held = 2,
-    }
-    */
 
     public enum JEnvelopeVectorMode
     {

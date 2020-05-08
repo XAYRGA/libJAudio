@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace libJAudio.Sequence
+namespace libJAudio.Sequence.Inter
 {
-    public partial class JAISeqSubroutine
+    public partial class JAISeqInterpreter
     {
         public JAISeqEvent ProcessFlowOps(byte currnet_opcode)
         {
@@ -15,102 +15,77 @@ namespace libJAudio.Sequence
             {
 
                 /* Open and close track */
-                case (byte)JAISeqEvent.OPEN_TRACK:
+                case 0xC1: // OPEN_TRACK
                     {
                         rI[0] = Sequence.ReadByte();
                         rI[1] = (int)Helpers.ReadUInt24BE(Sequence);  // Pointer to track inside of BMS file (Absolute) 
                         return JAISeqEvent.OPEN_TRACK;
                     }
-                case (byte)JAISeqEvent.FIN:
+                case 0xC2: // OPEN_TRACK_BROS
+                    var w = Sequence.ReadByte();
+                    return JAISeqEvent.OPEN_TRACK_BROS;
+                case 0xFF: // FIN
                     {
                         return JAISeqEvent.FIN;
                     }
-
                 /* Delays and waits */
-                case (byte)JAISeqEvent.WAIT_16: // Wait (UInt16)
+                case 0x88: // WAIT_16 (UInt16)
                     {
                         var delay = Sequence.ReadUInt16(); // load delay into ir0                  
                         rI[0] = delay;
                         return JAISeqEvent.WAIT_16;
                     }
-                case (byte)JAISeqEvent.WAIT_VAR: // Wait (VLQ) see readVlq function. 
+                case 0xF0: // WAIT_VAR
                     {
                         var delay = Helpers.ReadVLQ(Sequence); // load delay into ir0
                         rI[0] = delay;
                         return JAISeqEvent.WAIT_VAR;
                     }
-                case (byte)JAISeqEvent.WAIT_REGISTER:
+                case 0xCF: // WAIT_REGISTER
                     {
                         var register = Sequence.ReadByte();
-                        var delay = Registers[register];
-                        rI[0] = delay;
+                        rI[0] = register;
                         return JAISeqEvent.WAIT_REGISTER;
                     }
                 /* Logical jumps */
-                case (byte)JAISeqEvent.JUMP: // Unconditional jump
+                case 0xC7: // JUMP
                     {
                         rI[0] = 0; // No condition, r0
                         var addr = Sequence.ReadInt32(); // Absolute address r1
-                        jump(addr);
+                        //jump(addr);
                         rI[1] = addr;
                         return JAISeqEvent.JUMP;
                     }
-                case (byte)JAISeqEvent.JUMP_CONDITIONAL: // Jump based on mode
+                case 0xC8: // JUMP_CONDITIONAL
                     {
                         byte flags = Sequence.ReadByte(); // Read flags.
                         var condition = flags & 15; // last nybble is condition. 
-                        rI[0] = flags;  // store flags in ir0        
-                        rI[1] = 0;
                         var addr = (int)Helpers.ReadUInt24BE(Sequence); // pointer, push to ir1
-                        var yesJump = checkCondition((byte)condition); // Should we actually jump?
-                        if (yesJump)
-                        {
-                            jump(addr); // Jump to the specified position.
-                            rI[1] = addr;
-                        }
+                        rI[0] = flags;
+                        rI[1] = addr;
                         return JAISeqEvent.JUMP_CONDITIONAL;
                     }
-                case (byte)JAISeqEvent.RETURN_CONDITIONAL:
+                case 0xC6: // RETURN_CONDITIONAL
                     {
                         var cond = Sequence.ReadByte(); // Read condition byte
-                        var cCheck = checkCondition(cond); // Check the condition register
                         rI[0] = cond; // Store the condition in ir0
-                        rI[1] = 0; // clear address register
-                        if (cCheck)
-                        {
-                            var returnTo = AddrStack.Pop(); // Pull from address stack
-                            jump(returnTo);
-                            rI[1] = returnTo; // set address register
-                        }
                         return JAISeqEvent.RETURN_CONDITIONAL;
                     }
-                case (byte)JAISeqEvent.CALL_CONDITIONAL:
+                case 0xC4: // CALL_CONDITIONAL
                     {
                         var cond = Sequence.ReadByte();
                         var addr = (int)Helpers.ReadUInt24BE(Sequence);
-                        var cCheck = checkCondition(cond);
                         rI[0] = cond; // Set to condition
-                        rI[1] = 0;  // clear address register
-                        if (cCheck)
-                        {
-                            AddrStack.Push(pc); // Push to address stack
-                            jump(addr); // Jup to specified address
-                            rI[1] = addr; // set ir1 to address jumped to
-                        }
+                        rI[1] = addr; // set ir1 to address jumped
                         return JAISeqEvent.CALL_CONDITIONAL;
                     }
-                case (byte)JAISeqEvent.CALL:
+                case 0xC3: // CALL
                     {
-                        var cond = Sequence.ReadByte();
-                        var addr = Sequence.ReadInt32();
-                        var cCheck = checkCondition(cond);
+                        var addr = (int)Helpers.ReadUInt24BE(Sequence);
                         rI[0] = addr; // Set address
-                                              
-                        AddrStack.Push(pc); // Push to address stack
-                        jump(addr); // Jup to specified address
                         return JAISeqEvent.CALL;
                     }
-                case (byte)JAISeqEvent.RETURN:
+                case 0xC5: // RETURN
                     {
                         return JAISeqEvent.RETURN;
                     }

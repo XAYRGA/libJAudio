@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using libJAudio.Types;
 
 // If i was wrong about BX and its isntrument assignments (it assigns them sequentially, but loads into 0 when needed) 
 // then define this.
@@ -160,7 +159,17 @@ namespace libJAudio.Loaders
                             stm.Position = current_section.start; // Seek to start
                             var vx = new JA_WSYSLoader_V1(); // Create loader
                             var ws = vx.loadWSYS(read, current_section.start); // load
-                            JAS.WaveBanks[ws.id] = ws; // Push to wavebanks
+                            if (JAS.WaveBanks[ws.id] != null)
+                            {
+                                var ows = JAS.WaveBanks[ws.id]; // Merge duplicate wavetable ID's.
+                                foreach (int k in ws.WaveTable.Keys)
+                                {
+                                    ows.WaveTable[k] = ws.WaveTable[k];
+                                }
+                            } else
+                            {                            
+                                JAS.WaveBanks[ws.id] = ws; // Push to wavebanks
+                            }
                             break;
                         }
                     case JAIInitSectionType.SEQUENCE_COLLECTION:

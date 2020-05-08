@@ -6,46 +6,44 @@ using System.Threading.Tasks;
 using Be.IO;
 using System.IO;
 
-namespace libJAudio.Sequence
+namespace libJAudio.Sequence.Inter            
 {
-    public partial class JAISeqSubroutine
+    public enum JAISeqInterpreterVersion // Futile attempt to save my codebase.
+    {
+        JA1 = 0,
+        JA2 = 0
+    }
+
+    public partial class JAISeqInterpreter
     {
        
         byte[] SeqData; // Full .BMS  file.  
         BeBinaryReader Sequence; // Reader for SeqData
         private int baseAddress; // The address at which this subroutine starts in the file.
-        public byte last_opcode; // The last opcode that was executed. 
-        public JAISeqRegisterMap Registers;  // JAISeq Registers.
-        public JAISeqRegisterMap Ports;  //  Ports, for ReadPort and WritePort -- used for interfacing with external data or game events.
+        public byte last_opcode; // The last opcode that was executed.
         public Stack<int> AddrStack; // JAISeq return stack, depth of 8, used for CALL and RETURN commands.
         public Queue<JAISeqExecutionFrame> history; // Execution history.  
         public int[] rI; // Internal Integer registers  -- for interfacing with sequence. 
         public float[] rF; // Internal Float registers -- for interfacing with sequence.
+        public JAISeqInterpreterVersion InterpreterVersion;
+
         public int pc // Current Program Counter
         {
-            get
-            {
-                return (int)Sequence.BaseStream.Position;
-            }
-            set
-            {
-                Sequence.BaseStream.Position = value;
-            }
+            get {return (int)Sequence.BaseStream.Position; }
+            set { Sequence.BaseStream.Position = value; }
         }
         public int pcl;
-        public JAISeqSubroutine(ref byte[] BMSData,int BaseAddr)
+        public JAISeqInterpreter(ref byte[] BMSData,int BaseAddr, JAISeqInterpreterVersion ver)
         {
             SeqData = BMSData; // 
             AddrStack = new Stack<int>(8); // JaiSeq has a stack depth of 8
-            history = new Queue<JAISeqExecutionFrame>(16); // Ill keep an opcode depth of 16      
+            history = new Queue<JAISeqExecutionFrame>(32); // Ill keep an opcode depth of 32     
             Sequence = new BeBinaryReader(new MemoryStream(BMSData)); // Make a reader for this. 
             Sequence.BaseStream.Position = BaseAddr; // Set its position to the base address. 
             baseAddress = BaseAddr; // store the base address
             rI = new int[8]; 
             rF = new float[8];
-            Registers = new JAISeqRegisterMap();
-            Ports = new JAISeqRegisterMap();
-
+            InterpreterVersion = ver;
         }
 
 
@@ -61,51 +59,11 @@ namespace libJAudio.Sequence
 
         public void jump(int pos)
         {
-            Sequence.BaseStream.Position = pos; // move to new address
+            Sequence.BaseStream.Position = pos;
         }
-
-        private bool checkCondition(byte cond)
-        {
-            var conditionValue = Registers[3]; 
-            // Explanation:
-            // When a compare function is executed. the registers are subtracted. 
-            // The subtracted result is stored in R3. 
-            // This means:
-        
-            switch (cond)
-            {
-                case 0: // We were probably given the wrong commmand
-                    return true;  // oops, all boolean
-                case 1: // Equal, if r1 - r2 == 0, then they obviously both had the same value
-                    if (conditionValue==0) { return true; }
-                    return false; 
-                case 2: // Not Equal, If r1 - r2 doesn't equal 0, they were not the same value.
-                    if (conditionValue!=0) { return true; }
-                    return false; 
-                case 3: // One good question.
-                    if (conditionValue==1) { return true; }
-                    return false;
-                case 4: // Less Than if r1 - r2 is more than zero, this means r1 was less than r2
-                    if (conditionValue > 0) { return true; }
-                    return false;
-                case 5: // Greater than , if r1 - r2 is less than 0, that means r1 was bigger than r2
-                    if (conditionValue < 0) { return true; }
-                    return false; 
-            }
-            return false;
-        }
-
-        public short compare(short a, short b)
-        {
-            short res = (short)(a - b);
-            Registers[3] = res;
-            return res;
-        }
-
-       
         public JAISeqEvent loadNextOp()
         {
-            if (history.Count == 16)  // Opstack is full
+            if (history.Count == 32)  // Opstack is full
                 history.Dequeue(); // push the one off the end. 
             var historyPos = (int)Sequence.BaseStream.Position; // store push address for FIFO stack. 
             pcl = (int)Sequence.BaseStream.Position; // Store the last known program counter.  
@@ -120,14 +78,12 @@ namespace libJAudio.Sequence
                 rI[1] = Sequence.ReadByte(); // The next byte tells the voice, 0-8
                 rI[2] = Sequence.ReadByte(); // And finally, the next byte will tell the velocity 
                 return JAISeqEvent.NOTE_ON; // Return the note on event. 
-
             } else if (current_opcode==(byte)JAISeqEvent.WAIT_8) // Contrast to above, the opcode between these two is WAIT_U8
             {
                 rI[0] = Sequence.ReadByte(); // Add u8 ticks to the delay.  
                 return JAISeqEvent.WAIT_8;
             } else if (current_opcode < 0x88) // We already check if it's 0x80, so anything between here will be 0x81 and 0x87
             {
-                
                 rI[0] = (byte)(current_opcode & 0x7F); // Only the first 7 bits are going to determine which voice we're stopping. 
                 return JAISeqEvent.NOTE_OFF;
             } else // Finally, we can fall into our CASE statement. 
@@ -150,7 +106,6 @@ namespace libJAudio.Sequence
                             if (ret != JAISeqEvent.UNKNOWN)
                                 return ret;                    
                             break; // We didn't find anything, and this is our default case -- drop out. 
-
                         }
                      case (byte)JAISeqEvent.PRINTF:
                         {
@@ -161,15 +116,17 @@ namespace libJAudio.Sequence
                                 lastread = Sequence.ReadByte();
                                 v += (char)lastread;
                             }
-                            // Sequence.ReadByte();
+                            Console.WriteLine(v);
+                            var l = Sequence.ReadByte();
+                            if (l != 0)
+                                Sequence.BaseStream.Position = Sequence.BaseStream.Position - 1;
                             return JAISeqEvent.UNKNOWN;
                         }
-
                     case (byte)JAISeqEvent.SYNC_CPU:
                        skip(2);
                         // Console.WriteLine(Sequence.ReadByte());
                         //Console.WriteLine(Sequence.ReadByte());
-                        return JAISeqEvent.UNKNOWN;
+                        return JAISeqEvent.SYNC_CPU;
                     /* 3 byte unknowns */
                     case 0xDD:
                     case (byte)JAISeqEvent.FIRSTSET:
@@ -181,6 +138,7 @@ namespace libJAudio.Sequence
                     case (byte)JAISeqEvent.INTERRUPT:
                     case (byte)JAISeqEvent.BITWISE:
                     case (int)JAISeqEvent.LOADTBL:
+                    case (byte)JAISeqEvent.CLOSE_TRACK:
                         skip(4);
                         return JAISeqEvent.UNKNOWN;
                     /* special case unknowns? */
@@ -202,12 +160,14 @@ namespace libJAudio.Sequence
                     case 0xBE: // Completely unknown
                     case (byte)JAISeqEvent.WRITE_CHILD_PORT:
                     case (byte)JAISeqEvent.WRITE_PARENT_PORT:
+                    case (byte)JAISeqEvent.CONNECT_NAME:
+                    case (byte)JAISeqEvent.TRANSPOSE:
                         skip(2);
                         return JAISeqEvent.UNKNOWN;
                     /* One byte unknowns */
-                    case (byte)JAISeqEvent.CONNECT_NAME:
-                    case (byte)JAISeqEvent.TIMERELATE:
-                    case (byte)JAISeqEvent.TRANSPOSE:
+
+                    case 0xD5: // TIMERELATE
+            
                     case 0xDE: // don't know either.
                     case (byte)JAISeqEvent.IRCCUTOFF:
                     case 0xF4:

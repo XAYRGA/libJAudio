@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using libJAudio.Types;
+using libJAudio;
 using System.IO;
 using Be.IO;
 // JAAAF Loader
@@ -54,7 +54,7 @@ namespace libJAudio.Loaders
             while (true)
             {
                 var ChunkID = aafRead.ReadInt32(); // 0 chunk-id determines end of header. 
-                Console.WriteLine(ChunkID);
+               // Console.WriteLine(ChunkID);
                 if (ChunkID==0) // If the chunk-id is 0, then the  array  has  ended. 
                 {
                     break; // break loop

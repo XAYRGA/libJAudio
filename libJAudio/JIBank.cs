@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Be.IO;
 using System.IO;
 
-namespace libJAudio.Types
+namespace libJAudio
 {
     public class JIBank
     {
@@ -14,6 +14,4 @@ namespace libJAudio.Types
         public JInstrument[] Instruments;
         
     }
-
-    
 }

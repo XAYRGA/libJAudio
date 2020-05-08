@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace libJAudio.Sequence
+namespace libJAudio.Sequence.Inter
 {
     public class JAISeqExecutionFrame
     {

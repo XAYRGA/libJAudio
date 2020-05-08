@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using libJAudio.Types;
+using libJAudio;
 using System.IO;
 using Be.IO;
 
@@ -84,11 +84,13 @@ namespace libJAudio.Loaders
         public JIBank loadIBNK(BeBinaryReader binStream, int Base)
         {
             Console.WriteLine("Start load ibnk");
-            var RetIBNK = new JIBank();        
+            var RetIBNK = new JIBank();
+            Console.WriteLine(Base);
             iBase = Base;
             if (binStream.ReadInt32() != IBNK)
                 throw new InvalidDataException("Section doesn't have an IBNK header");
             Boundaries = binStream.ReadInt32() + 8; // total length of our section, the data of the section starts at +8, so we need to account for that, too.
+            RetIBNK.id = binStream.ReadInt32(); // Forgot this. Ibank ID. Important.
             OscTableOffset = findChunk(binStream, OSCT); // Load oscillator table chunk
             EnvTableOffset = findChunk(binStream, ENVT); // Load envelope table chunk
             RanTableOffset = findChunk(binStream, RAND); // Load random effect table chunk
@@ -100,7 +102,7 @@ namespace libJAudio.Loaders
             loadBankOscTable(binStream, Base); // Load oscillator table, also handles the ENVT!!
             binStream.BaseStream.Position = ListTableOffset + iBase; // Seek to the instrument list base
             var instruments = loadInstrumentList(binStream, Base); // Load it.
-
+            RetIBNK.Instruments = instruments;
             return RetIBNK;
         }
 
@@ -177,7 +179,8 @@ namespace libJAudio.Loaders
                 var osciIndex = binStream.ReadInt32(); // Each oscillator is stored as a 32 bit index.
                 newInst.oscillators[i] = bankOscillators[osciIndex]; // We loaded the oscillators already, I hope.  So this will grab them by their index.                
             }
-            binStream.ReadInt32(); // There's always a 0 int32 padding this and the key regions. 
+            var notpadding = binStream.ReadInt32(); // NOT PADDING. FUCK. Probably effects.
+            Helpers.readInt32Array(binStream, notpadding);
             var keyRegCount = binStream.ReadInt32();
             var keyLow = 0; // For region spanning. 
             JInstrumentKey[] keys = new JInstrumentKey[0x81]; // Always go for one more.
@@ -195,8 +198,12 @@ namespace libJAudio.Loaders
                 keyLow = bkey.baseKey; // Store our last key 
             }
             newInst.Keys = keys;
-            newInst.Pitch = binStream.ReadSingle(); // Pitch and volume come last???
+            // 03.27.2019 -- This was wrong, volume comes first. 
+            // having this swapped will multiply the gain by the finetune for the instrument.
+            // and the finetune by the volume.
+            // It sounds really drunk. 
             newInst.Volume = binStream.ReadSingle(); // ^^
+            newInst.Pitch = binStream.ReadSingle(); // Pitch and volume come last???
             // WE HAVE READ EVERY BYTE IN THE INST, WOOO
             return newInst;
         }
@@ -210,6 +217,7 @@ namespace libJAudio.Loaders
             newPERC.IsPercussion = true;
             newPERC.Pitch = 1f;
             newPERC.Volume = 1f;
+    
             var count = binStream.ReadInt32();
             var ptrs = Helpers.readInt32Array(binStream, count);
             var iKeys = new JInstrumentKey[count];
@@ -227,8 +235,9 @@ namespace libJAudio.Loaders
                         Console.WriteLine("ERROR: Invalid PMAP data {0:X} -- Potential misalignment!", binStream.BaseStream.Position);
                         continue;
                     }
-                    newKey.Pitch = binStream.ReadInt32();
+      
                     newKey.Volume = binStream.ReadInt32();
+                    newKey.Pitch = binStream.ReadInt32();
                     //binStream.ReadInt32(); // byte panning 
                     binStream.BaseStream.Seek(8, SeekOrigin.Current); // runtime. 
                     var velRegCount = binStream.ReadInt32();
@@ -261,11 +270,13 @@ namespace libJAudio.Loaders
           0x04 int32 velocityRegionCount
           VelocityRegion[velocityRegionCount] velocities; // NOTE THESE ARENT POINTERS, THESE ARE ACTUAL OBJECTS.
         */
+
         public JInstrumentKey readKeyRegion(BeBinaryReader binStream, int Base)
         {
             JInstrumentKey newKey = new JInstrumentKey();
             newKey.Velocities = new JInstrumentKeyVelocity[0x81]; // Create region array
             //-------
+            //Console.WriteLine(binStream.BaseStream.Position);
             newKey.baseKey = binStream.ReadByte(); // Store base key
             binStream.BaseStream.Seek(3, SeekOrigin.Current); ; // Skip 3 bytes
             var velRegCount = binStream.ReadInt32(); // Grab vel region count
@@ -307,6 +318,7 @@ namespace libJAudio.Loaders
             newReg.wave = binStream.ReadInt16();
             newReg.Volume = binStream.ReadSingle();
             newReg.Pitch = binStream.ReadSingle();
+
             return newReg;
         }
 
@@ -377,9 +389,7 @@ namespace libJAudio.Loaders
                 };
                 OscVecs[i] = vector;
             } // Go down below for the last vector, after sorting
-
             // todo: Figure out why this doesn't sort right? 
-
             // -1 is so we don't sort the last object in the array, because its null. We're sorting from the bottom up.
             for (int i = 0; i < len - 1; i++) // a third __fucking iteration__ on these stupid vectors.
             {
@@ -406,6 +416,12 @@ namespace libJAudio.Loaders
                 time = (short)(lastVector.time), // read time 
                 value = lastVector.value // read value
             };
+            // Setting up references. 
+            // can only be done after sorting :v...
+            for (int idx = 0; idx < OscVecs.Length - 1; idx++)
+            {
+                OscVecs[idx].next = OscVecs[idx + 1]; // current vector objects next is the one after it.
+            }
             var ret = new JEnvelope();
             ret.vectorList = OscVecs;
             return ret; // finally, return. 
@@ -438,12 +454,15 @@ namespace libJAudio.Loaders
         /* NOTE THAT THESE OSCILLATORS HAVE THE SAME FORMAT AS JAIV1, HOWEVER THE VECTORS ARE IN THE ENVT */
         public JOscillator loadOscillator(BeBinaryReader binStream, int EnvTableBase)
         {
+           
+            
             var Osc = new JOscillator(); // Create new oscillator           
             if (binStream.ReadInt32() != Osci) // Read first 4 bytes
                 throw new InvalidDataException("Oscillator format is invalid. " + binStream.BaseStream.Position);
       
             var target = binStream.ReadByte(); // load target -- what is it affecting?
             binStream.BaseStream.Seek(3, SeekOrigin.Current); // read 3 bytes?
+           
             Osc.rate = binStream.ReadSingle(); // Read the rate at which the oscillator progresses -- this will be relative to the number of ticks per beat.
             var attackSustainTableOffset = binStream.ReadInt32(); // Offset of AD table
             var releaseDecayTableOffset = binStream.ReadInt32(); // Offset of SR table

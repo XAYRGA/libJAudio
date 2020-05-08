@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using libJAudio.Types;
+using libJAudio;
 using System.IO;
 using Be.IO;
 
@@ -217,7 +217,6 @@ namespace libJAudio.Loaders
                     }
                 }
             } //*/
-
             // Now that we've sorted the vectors because nintendo packs them out of fucking order.
             // We can add the hold / stop vector :D
             // We havent advanced any more bytes by the way, so we're still at the end of that vector array from before.
@@ -230,6 +229,12 @@ namespace libJAudio.Loaders
                 time = (short)(lastVector.time), // read time 
                 value = lastVector.value // read value
             };
+            // Setting up references. 
+            // can only be done after sorting :v...
+            for (int idx = 0; idx < OscVecs.Length -1 ; idx++)
+            {
+                    OscVecs[idx].next = OscVecs[idx + 1]; // current vector objects next is the one after it.
+            }
             var ret = new JEnvelope();
             ret.vectorList = OscVecs;
             return ret; // finally, return. 
@@ -351,6 +356,8 @@ namespace libJAudio.Loaders
                 throw new InvalidDataException("Data is not an PER2");
             Inst.Pitch = 1.0f;
             Inst.Volume = 1.0f;
+            Inst.IsPercussion = true;
+            binStream.BaseStream.Seek(0x84, SeekOrigin.Current);
             JInstrumentKey[] keys = new JInstrumentKey[100];
             int[] keyPointers = new int[100];
             keyPointers = Helpers.readInt32Array(binStream, 100); // read the pointers.
@@ -384,6 +391,7 @@ namespace libJAudio.Loaders
                     }
                     velLow = breg.baseVel; // store the velocity for spanning
                 }
+                keys[i] = newKey;
             }
             Inst.Keys = keys;
             return Inst;
