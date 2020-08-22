@@ -8,12 +8,6 @@ using System.IO;
 
 namespace libJAudio.Sequence.Inter            
 {
-    public enum JAISeqInterpreterVersion // Futile attempt to save my codebase.
-    {
-        JA1 = 0,
-        JA2 = 1
-    }
-
     public partial class JAISeqInterpreter
     {
        
@@ -25,15 +19,13 @@ namespace libJAudio.Sequence.Inter
         public Queue<JAISeqExecutionFrame> history; // Execution history.  
         public int[] rI; // Internal Integer registers  -- for interfacing with sequence. 
         public float[] rF; // Internal Float registers -- for interfacing with sequence.
-        public JAISeqInterpreterVersion InterpreterVersion;
-
         public int pc // Current Program Counter
         {
             get {return (int)Sequence.BaseStream.Position; }
             set { Sequence.BaseStream.Position = value; }
         }
         public int pcl;
-        public JAISeqInterpreter(ref byte[] BMSData,int BaseAddr, JAISeqInterpreterVersion ver)
+        public JAISeqInterpreter(ref byte[] BMSData,int BaseAddr)
         {
             SeqData = BMSData; // 
             AddrStack = new Stack<int>(8); // JaiSeq has a stack depth of 8
@@ -43,8 +35,6 @@ namespace libJAudio.Sequence.Inter
             baseAddress = BaseAddr; // store the base address
             rI = new int[8]; 
             rF = new float[8];
-           // Console.WriteLine($"Initialized with intver {ver}");
-            InterpreterVersion = ver;
         }
 
 
@@ -62,6 +52,7 @@ namespace libJAudio.Sequence.Inter
         {
             Sequence.BaseStream.Position = pos;
         }
+       
         public JAISeqEvent loadNextOp()
         {
             if (history.Count == 32)  // Opstack is full
@@ -110,6 +101,7 @@ namespace libJAudio.Sequence.Inter
                         }
                      case (byte)JAISeqEvent.PRINTF:
                         {
+                           
                             var lastread = -1;
                             string v = "";
                             while (lastread != 0)
@@ -132,8 +124,7 @@ namespace libJAudio.Sequence.Inter
                     case 0xDD:
                     case (byte)JAISeqEvent.FIRSTSET:
                     case (byte)JAISeqEvent.LASTSET:
-                    case (byte)JAISeqEvent.TRANSPOSE:
-                    case (byte)JAISeqEvent.CLOSE_TRACK:
+           
                         skip(3);
                         return JAISeqEvent.UNKNOWN;
                     /* 4 byte unknowns */
@@ -141,7 +132,7 @@ namespace libJAudio.Sequence.Inter
                     case (byte)JAISeqEvent.INTERRUPT:
                     case (byte)JAISeqEvent.BITWISE:
                     case (int)JAISeqEvent.LOADTBL:
-                    //case (byte)JAISeqEvent.CLOSE_TRACK:
+                    case (byte)JAISeqEvent.CLOSE_TRACK:
                         skip(4);
                         return JAISeqEvent.UNKNOWN;
                     /* special case unknowns? */
@@ -162,13 +153,15 @@ namespace libJAudio.Sequence.Inter
                     case (byte)JAISeqEvent.CONNECT_CLOSE:
                     case 0xBE: // Completely unknown
                     case (byte)JAISeqEvent.WRITE_CHILD_PORT:
+                    case (byte)JAISeqEvent.WRITE_PARENT_PORT:
                     case (byte)JAISeqEvent.CONNECT_NAME:
-                   
+                    case (byte)JAISeqEvent.TRANSPOSE:
+                    case (byte)JAISeqEvent.TIMERELATE:
                         skip(2);
                         return JAISeqEvent.UNKNOWN;
                     /* One byte unknowns */
-
-                    case 0xD5: // TIMERELATE
+            
+                    
             
                     case 0xDE: // don't know either.
                     case (byte)JAISeqEvent.IRCCUTOFF:
@@ -178,9 +171,6 @@ namespace libJAudio.Sequence.Inter
                         //Console.WriteLine(Sequence.ReadByte());
                         return JAISeqEvent.UNKNOWN;
                     case 0xBC: // nobody knows what the actual fuck this is. 
-                        return JAISeqEvent.UNKNOWN;
-                    case 0xDC:
-                        skip(11);
                         return JAISeqEvent.UNKNOWN;
                 }
             }

@@ -159,8 +159,9 @@ namespace libJAudio.Loaders
               ???? int32 0 
               ???? int32 keyRegionCount 
               ???? keyRegion[keyRegionCount]
-              ???? float freqmultiplier
               ???? float gain
+              ???? float freqmultiplier
+             
         */
         public JInstrument loadInstrument(BeBinaryReader binStream, int Base)
         {
@@ -198,10 +199,7 @@ namespace libJAudio.Loaders
                 keyLow = bkey.baseKey; // Store our last key 
             }
             newInst.Keys = keys;
-            // 03.27.2019 -- This was wrong, volume comes first. 
-            // having this swapped will multiply the gain by the finetune for the instrument.
-            // and the finetune by the volume.
-            // It sounds really drunk. 
+         
             newInst.Volume = binStream.ReadSingle(); // ^^
             newInst.Pitch = binStream.ReadSingle(); // Pitch and volume come last???
             // WE HAVE READ EVERY BYTE IN THE INST, WOOO
@@ -454,15 +452,12 @@ namespace libJAudio.Loaders
         /* NOTE THAT THESE OSCILLATORS HAVE THE SAME FORMAT AS JAIV1, HOWEVER THE VECTORS ARE IN THE ENVT */
         public JOscillator loadOscillator(BeBinaryReader binStream, int EnvTableBase)
         {
-           
-            
             var Osc = new JOscillator(); // Create new oscillator           
             if (binStream.ReadInt32() != Osci) // Read first 4 bytes
                 throw new InvalidDataException("Oscillator format is invalid. " + binStream.BaseStream.Position);
       
             var target = binStream.ReadByte(); // load target -- what is it affecting?
             binStream.BaseStream.Seek(3, SeekOrigin.Current); // read 3 bytes?
-           
             Osc.rate = binStream.ReadSingle(); // Read the rate at which the oscillator progresses -- this will be relative to the number of ticks per beat.
             var attackSustainTableOffset = binStream.ReadInt32(); // Offset of AD table
             var releaseDecayTableOffset = binStream.ReadInt32(); // Offset of SR table
