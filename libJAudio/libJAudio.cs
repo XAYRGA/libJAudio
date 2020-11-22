@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace libJAudio
 {
-    class JSoundTable
+    public abstract class JBaseObject
     {
+        public int mBase;
+        public int mOffset;
     }
 }

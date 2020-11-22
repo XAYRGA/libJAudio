@@ -8,10 +8,13 @@ using System.IO;
 using Be.IO;
 // JAAAF Loader
 // JAudio Audio Archive File Loader
-namespace libJAudio.Loaders
+namespace libJAudio
 {
-    class JA_AAFLoader
+    public class JAudioArchiveFile : JASystem
     {
+
+        public JASNTable SoundNameTable;
+
 
 
         /* AAF 
@@ -34,7 +37,7 @@ namespace libJAudio.Loaders
           
         */
 
-        private JAIInitSection loadRegularSection(BeBinaryReader aafRead)
+        private static JAIInitSection loadRegularSection(BeBinaryReader aafRead)
         {
             var NewSect = new JAIInitSection();
             var offset = aafRead.ReadInt32(); 
@@ -46,7 +49,7 @@ namespace libJAudio.Loaders
             return NewSect;
         }
 
-        public JAIInitSection[] load(ref byte[] data)
+        public static JAIInitSection[] readStream(ref byte[] data)
         {
             Stack<JAIInitSection> stk = new Stack<JAIInitSection>(255);
             var aafRead = new BeBinaryReader(new MemoryStream(data));

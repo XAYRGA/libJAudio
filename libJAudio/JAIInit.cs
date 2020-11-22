@@ -30,7 +30,7 @@ namespace libJAudio
         UNKNOWN = 255
     }
 
-    public class JAIInitSection
+    public class JAIInitSection : JBaseObject
     {
         public int start;
         public int size;

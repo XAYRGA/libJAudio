@@ -8,13 +8,18 @@ using System.IO;
 using Be.IO;
 // JABAA Loader
 // JAudio Binary Audio Archive Loader
-namespace libJAudio.Loaders
+namespace libJAudio
 {
-    class JA_BAALoader
+    public class JBinaryAudioArchive : JASystem
     {
+
+        public JBST SoundTable;
+        public JBSTN SoundNameTable;
+        
+
         // BAA - Binary Audio Archive 
         public const int BAA_Header = 0x41415F3C;
-        public const int BAAC = 0x62616163; // BINARY AUDIO ARCHIVE CUSTOM
+        public const int BAAC = 0x62616163; // BINARY AUDIO ARCHIVE COLLECTION
         public const int BFCA = 0x62666361;
         public const int BMS = 0x626D7320; // BINARY MUSIC SEQUENCE
         public const int BNK = 0x626E6B20; // INSTRUMENT BANK
@@ -35,7 +40,7 @@ namespace libJAudio.Loaders
             return NewSect;
         }
 
-        public JAIInitSection[] load(ref byte[] data)
+        public static JAIInitSection[] readStream(ref byte[] data)
         {
             Stack<JAIInitSection> stk = new Stack<JAIInitSection>(255);
             var aafRead = new BeBinaryReader(new MemoryStream(data));

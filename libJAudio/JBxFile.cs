@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 using System.IO;
 using Be.IO;
 
-namespace libJAudio.Loaders
+namespace libJAudio
 {
-    public class JA_BXLoader
+    public class JBxFile : JASystem
     {
-        public JAIInitSection[] load(ref byte[] data)
+        public static JAIInitSection[] readStream(ref byte[] data)
         {
             Stack<JAIInitSection> stk = new Stack<JAIInitSection>(255);
             var aafRead = new BeBinaryReader(new MemoryStream(data));
